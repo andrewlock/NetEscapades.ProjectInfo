@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using Xunit;
 using static NetEscapades.ProjectInfo.Tests.ProjectInfoItems;
@@ -140,6 +141,72 @@ public class ProjectInfoGeneratorTests
         output.Should()
             .Contain("""public const string Odd = "a \"b\" | c , d ; e # f \\ g\nsecond line é 😀";""")
             .And.Contain("""=> "x\"y"u8;""");
+    }
+
+    /// <summary>Parses the generated code, to check that the literals have exactly the expected values</summary>
+    private static IEnumerable<string> LiteralValues(string generated)
+        => Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(generated).GetRoot()
+            .DescendantNodes()
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.LiteralExpressionSyntax>()
+            .Where(x => x.Token.Value is string
+                && x.Parent is Microsoft.CodeAnalysis.CSharp.Syntax.EqualsValueClauseSyntax
+                    or Microsoft.CodeAnalysis.CSharp.Syntax.ArrowExpressionClauseSyntax)
+            .Select(x => x.Token.ValueText);
+
+    // Built from character codes, as invisible and unpaired characters are unreadable (or invalid) in source
+    private static string Chars(params int[] codes)
+        => string.Concat(codes.Select(c => c <= 0xFFFF ? ((char)c).ToString() : char.ConvertFromUtf32(c)));
+
+    public static IEnumerable<object[]> TrickyUtf8Strings()
+    {
+        yield return [Chars('a', 0xE9, ' ', 0x65E5, 0x672C, ' ', 0x1F600, ' ', 0x2070E, ' ', 0xA0)];
+        yield return [Chars('z', 0x200B, 0xFEFF, 0xE000, 0x2028, 0x2029, 0x85, 1, 0x1F, 0x7F)];
+    }
+
+    [Theory]
+    [InlineData("plain")]
+    [InlineData("quote\" backslash\\ tab\t newline\n return\r nul\0 bell\a back\b ff\f vt\v")]
+    [InlineData("100% sure %zz %2 %")]
+    [InlineData("trailing escape\\")]
+    [MemberData(nameof(TrickyUtf8Strings))]
+    public void StringLiteralsRoundTrip(string value)
+    {
+        var output = GenerateValid(S("Value", value));
+
+        LiteralValues(output).Should().Equal(value);
+    }
+
+    [Theory]
+    [InlineData("plain")]
+    [InlineData("quote\" backslash\\ tab\t newline\n nul\0")]
+    [MemberData(nameof(TrickyUtf8Strings))]
+    public void Utf8LiteralsRoundTrip(string value)
+    {
+        var output = GenerateValid(U("Value", value));
+
+        output.Should().Contain("u8;");
+        LiteralValues(output).Should().Equal(value);
+    }
+
+    [Fact]
+    public void ManyItemsAreAllEmittedInOrder()
+    {
+        var items = new string[300];
+        for (var i = 0; i < items.Length; i++)
+        {
+            items[i] = i % 2 == 0 ? S($"Item{i}", $"value {i}") : U($"Item{i}", $"value {i}");
+        }
+
+        var output = GenerateValid(items);
+
+        for (var i = 0; i < items.Length; i++)
+        {
+            output.Should().Contain(i % 2 == 0
+                ? $"public const string Item{i} = \"value {i}\";"
+                : $"ReadOnlySpan<byte> Item{i} => \"value {i}\"u8;");
+        }
+
+        output.IndexOf("Item0 ").Should().BeLessThan(output.IndexOf("Item299 "));
     }
 
     [Fact]

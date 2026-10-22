@@ -10,19 +10,31 @@ namespace NetEscapades.ProjectInfo;
 [Generator]
 public class ProjectInfoGenerator : IIncrementalGenerator
 {
+    // States for each entry while validating, see Execute()
+    private const byte Registered = 1; // Not emitted, but its name is taken (for duplicate detection)
+    private const byte Rejected = 2; // Not emitted, and its name isn't taken
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        // The analyzer config options change for many reasons, so the first stages only pull out the raw strings
+        // (which are cheap to compare), and the more expensive parsing and validation only runs if they change.
         var entries = context.AnalyzerConfigOptionsProvider
             .Select(static (provider, _) =>
                 provider.GlobalOptions.TryGetValue(Constants.ItemsPropertyName, out var items)
                 && !string.IsNullOrWhiteSpace(items)
                     ? items
                     : null)
-            .Select(static (raw, _) => GetEntries(raw))
+            .Select(static (raw, _) => EntryParser.Parse(raw))
             .WithTrackingName(TrackingNames.ParsedItems);
 
         var config = context.AnalyzerConfigOptionsProvider
-            .Select(static (provider, _) => GetConfig(provider))
+            .Select(static (provider, _) =>
+            {
+                provider.GlobalOptions.TryGetValue(Constants.VisibilityPropertyName, out var visibility);
+                provider.GlobalOptions.TryGetValue(Constants.RootNamespacePropertyName, out var rootNamespace);
+                return (visibility, rootNamespace);
+            })
+            .Select(static (raw, _) => GetConfig(raw.visibility, raw.rootNamespace))
             .WithTrackingName(TrackingNames.Config);
 
         var languageVersion = context.ParseOptionsProvider
@@ -35,73 +47,56 @@ public class ProjectInfoGenerator : IIncrementalGenerator
             static (spc, source) => Execute(spc, source.Left.Left, source.Left.Right, source.Right));
     }
 
-    /// <summary>
-    /// Parses the ProjectInfoItems property, a comma-separated list of "S|name|value" or "U|name|value" entries
-    /// in which the name and value are URI-escaped. See the .targets file.
-    /// </summary>
-    private static EquatableArray<ProjectInfoEntry> GetEntries(string? projectInfoEntries)
+    private static ProjectInfoConfig GetConfig(string? visibility, string? rootNamespace)
     {
-        if (projectInfoEntries is null)
-        {
-            return default;
-        }
-
-        var entries = new List<ProjectInfoEntry>();
-        foreach (var item in projectInfoEntries.Split([','], StringSplitOptions.RemoveEmptyEntries))
-        {
-            var parts = item.Split('|');
-
-            // Correctly escaped text never contains '$', so this means MSBuild didn't evaluate it (the value contained a back-quote)
-            if (parts.Length == 3
-                && (parts[0] == "S" || parts[0] == "U")
-                && parts[1].IndexOf('$') < 0
-                && parts[2].IndexOf('$') < 0)
-            {
-                entries.Add(new ProjectInfoEntry(
-                    parts[0] == "S" ? ProjectInfoKind.String : ProjectInfoKind.Utf8,
-                    Uri.UnescapeDataString(parts[1]),
-                    Uri.UnescapeDataString(parts[2])));
-            }
-            else
-            {
-                entries.Add(new ProjectInfoEntry(ProjectInfoKind.String, string.Empty, null));
-            }
-        }
-
-        return new EquatableArray<ProjectInfoEntry>(entries.ToArray());
-    }
-
-    private static ProjectInfoConfig GetConfig(AnalyzerConfigOptionsProvider provider)
-    {
-        var options = provider.GlobalOptions;
-        options.TryGetValue(Constants.VisibilityPropertyName, out var visibility);
-        options.TryGetValue(Constants.RootNamespacePropertyName, out var rootNamespace);
-
+        // Trim() doesn't allocate if there is nothing to trim
+        var ns = rootNamespace?.Trim();
         return new ProjectInfoConfig(
-            IsPublic: string.Equals(visibility?.Trim(), "public", StringComparison.OrdinalIgnoreCase),
-            RootNamespace: IsValidNamespace(rootNamespace) ? rootNamespace!.Trim() : null);
+            IsPublic: visibility is not null && visibility.Trim().Equals("public", StringComparison.OrdinalIgnoreCase),
+            RootNamespace: ns is not null && IsValidNamespace(ns) ? ns : null);
     }
 
-    private static bool IsValidNamespace(string? value)
+    private static bool IsValidNamespace(ReadOnlySpan<char> value)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        while (true)
+        {
+            var dot = value.IndexOf('.');
+            if (!IsValidIdentifier(dot < 0 ? value : value.Slice(0, dot)))
+            {
+                return false;
+            }
+
+            if (dot < 0)
+            {
+                return true;
+            }
+
+            value = value.Slice(dot + 1);
+        }
+    }
+
+    private static bool IsValidIdentifier(ReadOnlySpan<char> name)
+    {
+        if (name.IsEmpty || !SyntaxFacts.IsIdentifierStartCharacter(name[0]))
         {
             return false;
         }
 
-        foreach (var part in value!.Trim().Split('.'))
+        var maybeKeyword = name[0] >= 'a' && name[0] <= 'z';
+        for (var i = 1; i < name.Length; i++)
         {
-            if (!IsValidIdentifier(part))
+            var c = name[i];
+            if (!SyntaxFacts.IsIdentifierPartCharacter(c))
             {
                 return false;
             }
+
+            maybeKeyword &= c >= 'a' && c <= 'z';
         }
 
-        return true;
+        // All C# keywords are lower case ASCII letters, so only allocate a string to look it up in that case
+        return !maybeKeyword || SyntaxFacts.GetKeywordKind(name.ToString()) == SyntaxKind.None;
     }
-
-    private static bool IsValidIdentifier(string name)
-        => SyntaxFacts.IsValidIdentifier(name) && SyntaxFacts.GetKeywordKind(name) == SyntaxKind.None;
 
     private static void Execute(
         SourceProductionContext context,
@@ -109,34 +104,86 @@ public class ProjectInfoGenerator : IIncrementalGenerator
         ProjectInfoConfig config,
         LanguageVersion languageVersion)
     {
-        var valid = new List<ProjectInfoEntry>(entries.Count);
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-
-        foreach (var entry in entries)
+        var all = entries.AsSpan();
+        if (all.IsEmpty)
         {
-            var descriptor =
-                entry.Value is null ? DiagnosticDescriptors.UnsupportedValue
-                : !IsValidIdentifier(entry.Name) || entry.Name == Constants.ClassName ? DiagnosticDescriptors.InvalidName
-                : !seen.Add(entry.Name) ? DiagnosticDescriptors.DuplicateName
-                : entry.Value.Length == 0 ? DiagnosticDescriptors.MissingValue
-                : entry.Kind == ProjectInfoKind.Utf8 && languageVersion < LanguageVersion.CSharp11 ? DiagnosticDescriptors.Utf8RequiresCSharp11
-                : null;
+            return;
+        }
 
-            if (descriptor is null)
+        // First pass: validate, report any problems, and record which entries should be emitted.
+        // Duplicates are found by comparing with the earlier entries, which is fast for the handful of entries expected
+        Span<byte> states = all.Length <= 128 ? stackalloc byte[128] : new byte[all.Length];
+        states = states.Slice(0, all.Length);
+
+        var emitCount = 0;
+        var capacity = SourceGenerationHelper.HeaderCapacity + (config.RootNamespace?.Length ?? 0);
+        for (var i = 0; i < all.Length; i++)
+        {
+            ref readonly var entry = ref all[i];
+
+            DiagnosticDescriptor? descriptor;
+            byte state;
+            if (entry.Value is null)
             {
-                valid.Add(entry);
+                descriptor = DiagnosticDescriptors.UnsupportedValue;
+                state = Rejected;
+            }
+            else if (entry.Name == Constants.ClassName || !IsValidIdentifier(entry.Name.AsSpan()))
+            {
+                descriptor = DiagnosticDescriptors.InvalidName;
+                state = Rejected;
+            }
+            else if (IsDuplicate(all, states, i))
+            {
+                descriptor = DiagnosticDescriptors.DuplicateName;
+                state = Rejected;
+            }
+            else if (entry.Value.Length == 0)
+            {
+                descriptor = DiagnosticDescriptors.MissingValue;
+                state = Registered;
+            }
+            else if (entry.Kind == ProjectInfoKind.Utf8 && languageVersion < LanguageVersion.CSharp11)
+            {
+                descriptor = DiagnosticDescriptors.Utf8RequiresCSharp11;
+                state = Registered;
             }
             else
+            {
+                descriptor = null;
+                state = SourceGenerationHelper.Emit;
+                emitCount++;
+                capacity += SourceGenerationHelper.EntryCapacity + entry.Name.Length + entry.Value.Length;
+            }
+
+            states[i] = state;
+            if (descriptor is not null)
             {
                 context.ReportDiagnostic(Diagnostic.Create(descriptor, Location.None, entry.Name));
             }
         }
 
-        if (valid.Count == 0)
+        if (emitCount == 0)
         {
             return;
         }
 
-        context.AddSource("ProjectInfo.g.cs", SourceText.From(SourceGenerationHelper.Generate(config, valid), Encoding.UTF8));
+        context.AddSource(
+            "ProjectInfo.g.cs",
+            SourceText.From(SourceGenerationHelper.Generate(config, all, states, capacity), Encoding.UTF8));
+    }
+
+    private static bool IsDuplicate(ReadOnlySpan<ProjectInfoEntry> all, ReadOnlySpan<byte> states, int index)
+    {
+        var name = all[index].Name;
+        for (var i = 0; i < index; i++)
+        {
+            if (states[i] != Rejected && string.Equals(all[i].Name, name, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

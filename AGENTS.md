@@ -41,7 +41,7 @@ The generator turns `<ProjectInfoString>` / `<ProjectInfoUtf8>` project items in
 
 - **`.targets`** — packs all `<ProjectInfoString>` / `<ProjectInfoUtf8>` items into one compiler-visible property, `ProjectInfoItems`: a comma-separated list of `S|name|value` / `U|name|value` entries with URI-escaped name and value (so `;`, `#` and newlines survive the generated `.editorconfig`). No files or `AdditionalFiles`. A value containing a back-quote is not evaluated by MSBuild and is reported as NEPI005. **`.props`** — default `ProjectInfoVisibility` and `CompilerVisibleProperty` for `ProjectInfoVisibility` / `ProjectInfoItems` / `RootNamespace`.
 - **ProjectInfoGenerator.cs** — `IIncrementalGenerator`. Parses the `ProjectInfoItems` property, combines it with the config (visibility, root namespace) and the C# language version, then validates (NEPI001–NEPI005 in `Diagnostics/DiagnosticDescriptors.cs`) and emits `ProjectInfo.g.cs`.
-- **ProjectInfoEntry.cs** — the equatable models used in the pipeline.
+- **EntryParser.cs** — span-based parser/unescaper for the `ProjectInfoItems` property. **ProjectInfoEntry.cs** — the equatable (struct) models used in the pipeline.
 - **SourceGenerationHelper.cs** — `StringBuilder`-based emitter; literals are escaped with `SymbolDisplay.FormatLiteral`.
 - **TrackingNames.cs** — String constants for incremental generator step tracking, used in tests to verify caching behavior.
 - **EquatableArray.cs**, **HashCode.cs**, **LocationInfo.cs** — helpers for building cache-friendly pipeline models.
@@ -53,6 +53,7 @@ The `NetEscapades.ProjectInfo.IntegrationTests` project imports the props/target
 - **Generators target netstandard2.0** â€” must run inside any version of the Roslyn compiler. Cannot use modern .NET APIs directly; uses the `Polyfill` package for compatibility.
 - **Incremental generator caching** â€” pipeline models and outputs must correctly implement equality. Tests verify this by running the generator twice and asserting all tracked outputs are `Cached` or `Unchanged` on the second run.
 - **No Roslyn symbols in outputs** â€” the generator must not store `ISymbol`, `Compilation`, or `SyntaxNode` objects in pipeline outputs (would break caching). `TestHelpers.AssertObjectGraph` validates this.
+- **Allocations matter** — the generator runs inside the compiler/IDE, so keep allocations to a minimum: parse with `ReadOnlySpan<char>` rather than `Split`/`Substring`, pre-size arrays and `StringBuilder`s, keep pipeline models as `readonly record struct`s, and keep expensive work (parsing, validation) behind cheap, cacheable stages (e.g. `EntryParser.Parse` only runs when the raw `ProjectInfoItems` string changes). Literals are escaped straight into the builder (`SourceGenerationHelper.AppendLiteral`) rather than via `SymbolDisplay.FormatLiteral`.
 
 ## Testing
 
