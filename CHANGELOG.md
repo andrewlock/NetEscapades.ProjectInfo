@@ -1,6 +1,12 @@
 Changelog
 --- 
 
+## [v0.1.0-beta2](https://github.com/andrewlock/NetEscapades.ProjectInfo/compare/v0.1.0-beta1...v0.1.0-beta2)
+
+### Fixes
+
+* Fix NEPI001 (empty item name) when only one of `<ProjectInfoString>` or `<ProjectInfoUtf8>` is declared
+
 ## [v0.1.0-beta1](https://github.com/andrewlock/NetEscapades.ProjectInfo/commits/v0.1.0-beta1)
 
 ### Features
