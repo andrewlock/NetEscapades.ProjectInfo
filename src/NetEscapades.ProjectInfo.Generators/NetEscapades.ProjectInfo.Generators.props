@@ -1,0 +1,3 @@
+<Project>
+  <!-- MSBuild properties, and the CompilerVisibleProperty items that expose them to the generator, go here -->
+</Project>

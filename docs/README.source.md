@@ -1,0 +1,14 @@
+# ![](https://raw.githubusercontent.com/andrewlock/NetEscapades.ProjectInfo/refs/heads/main/docs/images/icon_32.png) NetEscapades.ProjectInfo.Generators
+
+![Build status](https://github.com/andrewlock/NetEscapades.ProjectInfo/actions/workflows/BuildAndPack.yml/badge.svg)
+[![NuGet](https://img.shields.io/nuget/v/NetEscapades.ProjectInfo.Generators.svg)](https://www.nuget.org/packages/NetEscapades.ProjectInfo.Generators/)
+
+[NetEscapades.ProjectInfo.Generators](https://www.nuget.org/packages/NetEscapades.ProjectInfo.Generators) is a source generator package that exposes information about your project at compile time.
+
+## Adding NetEscapades.ProjectInfo.Generators to your project
+
+Add the package to your application using
+
+```bash
+dotnet add package NetEscapades.ProjectInfo.Generators
+```

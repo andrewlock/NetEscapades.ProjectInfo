@@ -1,0 +1,16 @@
+<Project>
+  <PropertyGroup>
+    <PackageReleaseNotes>
+      <![CDATA[
+## 0.1.0-beta1
+
+### Features
+
+* Initial release
+
+]]>
+    </PackageReleaseNotes>
+     <PackageReleaseNotes>$(PackageReleaseNotes)
+See $(PackageProjectUrl)/blob/main/CHANGELOG.md#v$(PackageVersion.Replace('.','')) for more details.</PackageReleaseNotes>
+  </PropertyGroup>
+</Project>
