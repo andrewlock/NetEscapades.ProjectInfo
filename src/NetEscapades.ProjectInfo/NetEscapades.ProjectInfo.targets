@@ -10,8 +10,10 @@
   -->
   <Target Name="NetEscapadesProjectInfo_SetItemsProperty" BeforeTargets="GenerateMSBuildEditorConfigFileShouldRun;CoreCompile"
           Condition="'@(ProjectInfoString)' != '' or '@(ProjectInfoUtf8)' != ''">
-    <ItemGroup>
+    <ItemGroup Condition="'@(ProjectInfoString)' != ''">
       <_NetEscapadesProjectInfoEntry Include="S|$([System.Uri]::EscapeDataString(`%(ProjectInfoString.Identity)`))|$([System.Uri]::EscapeDataString(`%(ProjectInfoString.Value)`))" />
+    </ItemGroup>
+    <ItemGroup Condition="'@(ProjectInfoUtf8)' != ''">
       <_NetEscapadesProjectInfoEntry Include="U|$([System.Uri]::EscapeDataString(`%(ProjectInfoUtf8.Identity)`))|$([System.Uri]::EscapeDataString(`%(ProjectInfoUtf8.Value)`))" />
     </ItemGroup>
     <PropertyGroup>
