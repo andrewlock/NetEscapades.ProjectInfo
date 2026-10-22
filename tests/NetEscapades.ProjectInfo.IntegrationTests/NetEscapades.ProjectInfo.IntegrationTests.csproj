@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Project references to analyzers do not get the buildTransitive props/targets that the NuGet package ships -->
-  <Import Project="..\..\src\NetEscapades.ProjectInfo.Generators\NetEscapades.ProjectInfo.Generators.props" />
+  <Import Project="..\..\src\NetEscapades.ProjectInfo\NetEscapades.ProjectInfo.props" />
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\NetEscapades.ProjectInfo.Generators\NetEscapades.ProjectInfo.Generators.csproj"
+    <ProjectReference Include="..\..\src\NetEscapades.ProjectInfo\NetEscapades.ProjectInfo.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
@@ -45,6 +45,6 @@
     </PackageReference>
   </ItemGroup>
 
-  <Import Project="..\..\src\NetEscapades.ProjectInfo.Generators\NetEscapades.ProjectInfo.Generators.targets" />
+  <Import Project="..\..\src\NetEscapades.ProjectInfo\NetEscapades.ProjectInfo.targets" />
 </Project>
 

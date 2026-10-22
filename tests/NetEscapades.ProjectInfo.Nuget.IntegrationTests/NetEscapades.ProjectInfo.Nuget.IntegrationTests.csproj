@@ -29,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetEscapades.ProjectInfo.Generators" Version="$(Version)" PrivateAssets="All" />
+    <PackageReference Include="NetEscapades.ProjectInfo" Version="$(Version)" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>

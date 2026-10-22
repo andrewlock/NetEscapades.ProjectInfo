@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\NetEscapades.ProjectInfo.Generators\NetEscapades.ProjectInfo.Generators.csproj" />
+    <ProjectReference Include="..\..\src\NetEscapades.ProjectInfo\NetEscapades.ProjectInfo.csproj" />
   </ItemGroup>
 
 </Project>

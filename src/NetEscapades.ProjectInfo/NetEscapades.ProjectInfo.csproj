@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <PackageId>NetEscapades.ProjectInfo.Generators</PackageId>
+    <PackageId>NetEscapades.ProjectInfo</PackageId>
     <AssemblyName>$(PackageId)</AssemblyName>
     <RootNamespace>NetEscapades.ProjectInfo</RootNamespace>
     <Nullable>enable</Nullable>
@@ -26,10 +26,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\docs\NetEscapades.ProjectInfo.Generators.md" Pack="true" PackagePath="\README.md" />
+    <None Include="..\..\docs\NetEscapades.ProjectInfo.md" Pack="true" PackagePath="\README.md" />
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Include="NetEscapades.ProjectInfo.Generators.props" Pack="true" PackagePath="buildTransitive" Visible="true" />
-    <None Include="NetEscapades.ProjectInfo.Generators.targets" Pack="true" PackagePath="buildTransitive" Visible="true" />
+    <None Include="NetEscapades.ProjectInfo.props" Pack="true" PackagePath="buildTransitive" Visible="true" />
+    <None Include="NetEscapades.ProjectInfo.targets" Pack="true" PackagePath="buildTransitive" Visible="true" />
   </ItemGroup>
 </Project>
 

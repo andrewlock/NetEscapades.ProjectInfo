@@ -5,19 +5,19 @@ Source File: /README.source.md
 To change this file edit the source file and then run MarkdownSnippets.
 -->
 
-# ![](https://raw.githubusercontent.com/andrewlock/NetEscapades.ProjectInfo/refs/heads/main/docs/images/icon_32.png) NetEscapades.ProjectInfo.Generators
+# ![](https://raw.githubusercontent.com/andrewlock/NetEscapades.ProjectInfo/refs/heads/main/docs/images/icon_32.png) NetEscapades.ProjectInfo
 
 ![Build status](https://github.com/andrewlock/NetEscapades.ProjectInfo/actions/workflows/BuildAndPack.yml/badge.svg)
-[![NuGet](https://img.shields.io/nuget/v/NetEscapades.ProjectInfo.Generators.svg)](https://www.nuget.org/packages/NetEscapades.ProjectInfo.Generators/)
+[![NuGet](https://img.shields.io/nuget/v/NetEscapades.ProjectInfo.svg)](https://www.nuget.org/packages/NetEscapades.ProjectInfo/)
 
-[NetEscapades.ProjectInfo.Generators](https://www.nuget.org/packages/NetEscapades.ProjectInfo.Generators) is a small source generator that echoes values from your project file into a generated `ProjectInfo` class, as `const string` values or as `ReadOnlySpan<byte>` UTF-8 literals.
+[NetEscapades.ProjectInfo](https://www.nuget.org/packages/NetEscapades.ProjectInfo) is a small source generator that echoes values from your project file into a generated `ProjectInfo` class, as `const string` values or as `ReadOnlySpan<byte>` UTF-8 literals.
 
-## Adding NetEscapades.ProjectInfo.Generators to your project
+## Adding NetEscapades.ProjectInfo to your project
 
 Add the package to your application using
 
 ```bash
-dotnet add package NetEscapades.ProjectInfo.Generators
+dotnet add package NetEscapades.ProjectInfo
 ```
 
 You can mark the package as `PrivateAssets="all"`, as nothing from it is needed at runtime.

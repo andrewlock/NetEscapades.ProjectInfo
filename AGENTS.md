@@ -33,9 +33,9 @@ dotnet test tests/NetEscapades.ProjectInfo.Tests
 
 ### NuGet Package Structure
 
-- **NetEscapades.ProjectInfo.Generators** â€” the source generator (netstandard2.0), packed into `analyzers/dotnet/cs`. Also ships `buildTransitive` props/targets.
+- **NetEscapades.ProjectInfo** â€” the source generator (netstandard2.0), packed into `analyzers/dotnet/cs`. Also ships `buildTransitive` props/targets.
 
-### Source Generator (`src/NetEscapades.ProjectInfo.Generators/`)
+### Source Generator (`src/NetEscapades.ProjectInfo/`)
 
 The generator turns `<ProjectInfoString>` / `<ProjectInfoUtf8>` project items into a single generated `ProjectInfo` class.
 
@@ -64,5 +64,5 @@ The `NetEscapades.ProjectInfo.IntegrationTests` project imports the props/target
 ## Version Management
 
 - Version is defined in `version.props` (`VersionPrefix` + `VersionSuffix`).
-- `Constants.cs` in the generators project also contains the version string.
+- `Constants.cs` in `src/NetEscapades.ProjectInfo` also contains the version string.
 - Both must be updated together when changing versions, along with `releasenotes.props` and `CHANGELOG.md`.

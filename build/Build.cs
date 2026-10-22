@@ -112,7 +112,7 @@ class Build : NukeBuild
 
             if (!string.IsNullOrEmpty(PackagesDirectory))
             {
-                (PackagesDirectory / "netescapades.projectinfo.generators").DeleteDirectory();
+                (PackagesDirectory / "netescapades.projectinfo").DeleteDirectory();
             }
 
             DotNetRestore(s => s
