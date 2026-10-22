@@ -1,3 +1,10 @@
 <Project>
-  <!-- MSBuild properties, and the CompilerVisibleProperty items that expose them to the generator, go here -->
+  <PropertyGroup>
+    <ProjectInfoVisibility Condition="'$(ProjectInfoVisibility)' == ''">internal</ProjectInfoVisibility>
+  </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="ProjectInfoVisibility" />
+    <CompilerVisibleProperty Include="ProjectInfoItems" />
+    <CompilerVisibleProperty Include="RootNamespace" />
+  </ItemGroup>
 </Project>

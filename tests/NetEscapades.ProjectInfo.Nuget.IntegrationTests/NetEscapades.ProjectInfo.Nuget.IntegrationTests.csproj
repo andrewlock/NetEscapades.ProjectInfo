@@ -2,9 +2,23 @@
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
+    <!-- The shared test sources live in this namespace, and the generated class goes in the RootNamespace -->
+    <RootNamespace>NetEscapades.ProjectInfo.IntegrationTests</RootNamespace>
     <Nullable>enable</Nullable>
     <DefineConstants>$(DefineConstants);NUGET_INTEGRATION_TESTS</DefineConstants>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectInfoString Include="Version" Value="1.2.3" />
+    <ProjectInfoString Include="WithSpecialCharacters" Value="a;b &quot;quoted&quot; it's | back\slash é 😀" />
+    <ProjectInfoUtf8 Include="VersionBytes" Value="4.5.6" />
+    <ProjectInfoUtf8 Include="SpecialBytes" Value="é 😀" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ReadOnlySpan<byte> is not part of .NET Framework -->
+    <PackageReference Include="System.Memory" Version="4.6.3" Condition="'$(TargetFramework)' == 'net48'" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\NetEscapades.ProjectInfo.IntegrationTests\*.cs" Link="%(Filename)%(Extension)" />

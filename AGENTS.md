@@ -37,9 +37,16 @@ dotnet test tests/NetEscapades.ProjectInfo.Tests
 
 ### Source Generator (`src/NetEscapades.ProjectInfo.Generators/`)
 
-- **ProjectInfoGenerator.cs** â€” `IIncrementalGenerator` entry point.
-- **TrackingNames.cs** â€” String constants for incremental generator step tracking, used in tests to verify caching behavior.
-- **EquatableArray.cs**, **HashCode.cs**, **LocationInfo.cs** â€” helpers for building cache-friendly pipeline models.
+The generator turns `<ProjectInfoString>` / `<ProjectInfoUtf8>` project items into a single generated `ProjectInfo` class.
+
+- **`.targets`** — packs all `<ProjectInfoString>` / `<ProjectInfoUtf8>` items into one compiler-visible property, `ProjectInfoItems`: a comma-separated list of `S|name|value` / `U|name|value` entries with URI-escaped name and value (so `;`, `#` and newlines survive the generated `.editorconfig`). No files or `AdditionalFiles`. A value containing a back-quote is not evaluated by MSBuild and is reported as NEPI005. **`.props`** — default `ProjectInfoVisibility` and `CompilerVisibleProperty` for `ProjectInfoVisibility` / `ProjectInfoItems` / `RootNamespace`.
+- **ProjectInfoGenerator.cs** — `IIncrementalGenerator`. Parses the `ProjectInfoItems` property, combines it with the config (visibility, root namespace) and the C# language version, then validates (NEPI001–NEPI005 in `Diagnostics/DiagnosticDescriptors.cs`) and emits `ProjectInfo.g.cs`.
+- **ProjectInfoEntry.cs** — the equatable models used in the pipeline.
+- **SourceGenerationHelper.cs** — `StringBuilder`-based emitter; literals are escaped with `SymbolDisplay.FormatLiteral`.
+- **TrackingNames.cs** — String constants for incremental generator step tracking, used in tests to verify caching behavior.
+- **EquatableArray.cs**, **HashCode.cs**, **LocationInfo.cs** — helpers for building cache-friendly pipeline models.
+
+The `NetEscapades.ProjectInfo.IntegrationTests` project imports the props/targets by path (a project reference to an analyzer doesn't get `buildTransitive` files); the Nuget integration project gets them from the package.
 
 ### Key Design Constraints
 

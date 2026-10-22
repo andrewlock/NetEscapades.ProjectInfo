@@ -5,4 +5,7 @@ namespace NetEscapades.ProjectInfo;
 /// </summary>
 public class TrackingNames
 {
+    public const string ParsedItems = nameof(ParsedItems);
+    public const string Config = nameof(Config);
+    public const string LanguageVersion = nameof(LanguageVersion);
 }

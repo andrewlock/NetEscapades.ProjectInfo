@@ -1,10 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Project references to analyzers do not get the buildTransitive props/targets that the NuGet package ships -->
+  <Import Project="..\..\src\NetEscapades.ProjectInfo.Generators\NetEscapades.ProjectInfo.Generators.props" />
+
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <DefineConstants>$(DefineConstants);INTEGRATION_TESTS</DefineConstants>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectInfoString Include="Version" Value="1.2.3" />
+    <ProjectInfoString Include="WithSpecialCharacters" Value="a;b &quot;quoted&quot; it's | back\slash é 😀" />
+    <ProjectInfoUtf8 Include="VersionBytes" Value="4.5.6" />
+    <ProjectInfoUtf8 Include="SpecialBytes" Value="é 😀" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ReadOnlySpan<byte> is not part of .NET Framework -->
+    <PackageReference Include="System.Memory" Version="4.6.3" Condition="'$(TargetFramework)' == 'net48'" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetEscapades.ProjectInfo.Generators\NetEscapades.ProjectInfo.Generators.csproj"
@@ -29,5 +44,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
+
+  <Import Project="..\..\src\NetEscapades.ProjectInfo.Generators\NetEscapades.ProjectInfo.Generators.targets" />
 </Project>
 

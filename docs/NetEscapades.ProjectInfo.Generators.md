@@ -10,7 +10,7 @@ To change this file edit the source file and then run MarkdownSnippets.
 ![Build status](https://github.com/andrewlock/NetEscapades.ProjectInfo/actions/workflows/BuildAndPack.yml/badge.svg)
 [![NuGet](https://img.shields.io/nuget/v/NetEscapades.ProjectInfo.Generators.svg)](https://www.nuget.org/packages/NetEscapades.ProjectInfo.Generators/)
 
-[NetEscapades.ProjectInfo.Generators](https://www.nuget.org/packages/NetEscapades.ProjectInfo.Generators) is a source generator package that exposes information about your project at compile time.
+[NetEscapades.ProjectInfo.Generators](https://www.nuget.org/packages/NetEscapades.ProjectInfo.Generators) is a small source generator that echoes values from your project file into a generated `ProjectInfo` class, as `const string` values or as `ReadOnlySpan<byte>` UTF-8 literals.
 
 ## Adding NetEscapades.ProjectInfo.Generators to your project
 
@@ -19,3 +19,45 @@ Add the package to your application using
 ```bash
 dotnet add package NetEscapades.ProjectInfo.Generators
 ```
+
+You can mark the package as `PrivateAssets="all"`, as nothing from it is needed at runtime.
+
+## Usage
+
+Declare the values you want in your _.csproj_ file:
+
+```xml
+<ItemGroup>
+  <ProjectInfoString Include="Version" Value="1.2.3" />
+  <ProjectInfoUtf8 Include="VersionBytes" Value="4.5.6" />
+</ItemGroup>
+```
+
+This generates the following class:
+
+```csharp
+#nullable enable
+internal static partial class ProjectInfo
+{
+    public const string Version = "1.2.3";
+    public static global::System.ReadOnlySpan<byte> VersionBytes => "4.5.6"u8;
+}
+```
+
+- `ProjectInfoString` generates a `public const string`.
+- `ProjectInfoUtf8` generates a `ReadOnlySpan<byte>` property using a `"..."u8` literal. This requires C# 11 or later (and a target that has `ReadOnlySpan<byte>`, e.g. the _System.Memory_ package on .NET Framework).
+- The item name (`Version`) is the member name, and the `Value` metadata is the value. Nothing is generated if you don't declare any items.
+
+The class is generated in your project's `<RootNamespace>` if one is set, otherwise in the global namespace. It is `internal` and `partial` by default; set `<ProjectInfoVisibility>public</ProjectInfoVisibility>` to make it `public`.
+
+## Diagnostics
+
+Invalid items are reported as errors and skipped; other items are still generated.
+
+| ID | Meaning |
+| --- | --- |
+| NEPI001 | The item name is not a valid C# identifier (or is `ProjectInfo`) |
+| NEPI002 | The item name is defined more than once (the first definition wins) |
+| NEPI003 | The item has no (or an empty) `Value` |
+| NEPI004 | `ProjectInfoUtf8` is used with a language version lower than C# 11 |
+| NEPI005 | An item could not be read: values containing a back-quote (`) are not supported |
