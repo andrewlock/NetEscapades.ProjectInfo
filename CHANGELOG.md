@@ -1,6 +1,12 @@
 Changelog
 --- 
 
+## [v0.1.0-beta3](https://github.com/andrewlock/NetEscapades.ProjectInfo/compare/v0.1.0-beta2...v0.1.0-beta3)
+
+### Fixes
+
+* Fix builds failing on MSBuild versions earlier than 18.3 (e.g. the .NET 7, 8 and 9 SDKs), which don't allow `System.Uri` in property functions. 
+
 ## [v0.1.0-beta2](https://github.com/andrewlock/NetEscapades.ProjectInfo/compare/v0.1.0-beta1...v0.1.0-beta2)
 
 ### Fixes
