@@ -1,11 +1,10 @@
-using System.Buffers;
 using System.Text;
 
 namespace NetEscapades.ProjectInfo;
 
 /// <summary>
 /// Parses the ProjectInfoItems property, a comma-separated list of "S|name|value" or "U|name|value" entries
-/// in which the name and value are URI-escaped (see the .targets file). Works over spans to avoid intermediate strings.
+/// in which the name and value are base64-encoded UTF-8 (see the .targets file). Works over spans to avoid intermediate strings.
 /// </summary>
 internal static class EntryParser
 {
@@ -69,14 +68,16 @@ internal static class EntryParser
                 var name = rest.Slice(0, separator);
                 var value = rest.Slice(separator + 1);
 
-                // Correctly escaped text never contains '|' or '$'. A '$' means MSBuild didn't evaluate the
-                // expression, because the value contained a back-quote
-                if (value.IndexOf('|') < 0 && name.IndexOf('$') < 0 && value.IndexOf('$') < 0)
+                // Correctly encoded text is always valid base64, so never contains '|' or '$'. A '$' means MSBuild
+                // didn't evaluate the expression, because the value contained a back-quote
+                if (value.IndexOf('|') < 0
+                    && TryDecode(name, out var decodedName)
+                    && TryDecode(value, out var decodedValue))
                 {
                     return new ProjectInfoEntry(
                         item[0] == 'S' ? ProjectInfoKind.String : ProjectInfoKind.Utf8,
-                        Unescape(name),
-                        Unescape(value));
+                        decodedName,
+                        decodedValue);
                 }
             }
         }
@@ -85,54 +86,21 @@ internal static class EntryParser
     }
 
     /// <summary>
-    /// Reverses <c>Uri.EscapeDataString</c>. The escaped text is always ASCII, with non-ASCII characters
-    /// encoded as percent-escaped UTF-8 bytes. Only allocates the result string when nothing needs unescaping,
-    /// otherwise additionally borrows a pooled buffer.
+    /// Reverses <c>[MSBuild]::ConvertToBase64</c>: base64 of the UTF-8 bytes. Returns <c>false</c> for anything that
+    /// isn't valid base64. This only runs when the raw property changes, so the intermediate allocations are acceptable.
     /// </summary>
-    private static string Unescape(ReadOnlySpan<char> escaped)
+    private static bool TryDecode(ReadOnlySpan<char> encoded, out string decoded)
     {
-        if (escaped.IndexOf('%') < 0)
-        {
-            return escaped.ToString();
-        }
-
-        var buffer = ArrayPool<byte>.Shared.Rent(escaped.Length);
         try
         {
-            var length = 0;
-            for (var i = 0; i < escaped.Length; i++)
-            {
-                var c = escaped[i];
-                if (c == '%' && i + 2 < escaped.Length &&TryReadHex(escaped[i + 1], escaped[i + 2], out var b))
-                {
-                    buffer[length++] = b;
-                    i += 2;
-                }
-                else
-                {
-                    buffer[length++] = (byte)c;
-                }
-            }
-
-            return Encoding.UTF8.GetString(buffer, 0, length);
+            var bytes = Convert.FromBase64String(encoded.ToString());
+            decoded = Encoding.UTF8.GetString(bytes);
+            return true;
         }
-        finally
+        catch (FormatException)
         {
-            ArrayPool<byte>.Shared.Return(buffer);
+            decoded = string.Empty;
+            return false;
         }
     }
-
-    private static bool TryReadHex(char high, char low, out byte value)
-    {
-        var h = HexValue(high);
-        var l = HexValue(low);
-        value = (byte)((h << 4) | l);
-        return (h | l) >= 0;
-    }
-
-    private static int HexValue(char c)
-        => c is >= '0' and <= '9' ? c - '0'
-         : c is >= 'A' and <= 'F' ? c - 'A' + 10
-         : c is >= 'a' and <= 'f' ? c - 'a' + 10
-         : -1;
 }

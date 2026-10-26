@@ -2,19 +2,24 @@
   <!--
     Passes the <ProjectInfoString> and <ProjectInfoUtf8> items to the generator in a single compiler-visible property,
     ProjectInfoItems. Nothing is written to disk. The format is a comma-separated list of "<S|U>|<name>|<value>"
-    entries, where the name and value are URI-escaped (so they can never contain ',' '|' ';' '#' or newlines, which are
-    significant to the generated .editorconfig file or to the format). The generator reverses the escaping.
+    entries, where the name and value are base64-encoded UTF-8 (so they can never contain ',' '|' ';' '#' or newlines,
+    which are significant to the generated .editorconfig file or to the format). The generator decodes them.
 
-    Back-quotes delimit the escaped text so that other quote characters are supported. A value that itself contains a
+    [MSBuild]::ConvertToBase64 requires MSBuild 17.5+. System.Uri isn't usable here, as it is only allowed in property
+    functions from MSBuild 18.3.
+
+    Back-quotes delimit the encoded text so that other quote characters are supported. A value that itself contains a
     back-quote is not evaluated by MSBuild; the generator detects this and reports NEPI005.
   -->
   <Target Name="NetEscapadesProjectInfo_SetItemsProperty" BeforeTargets="GenerateMSBuildEditorConfigFileShouldRun;CoreCompile"
           Condition="'@(ProjectInfoString)' != '' or '@(ProjectInfoUtf8)' != ''">
+    <Error Condition="$([MSBuild]::VersionLessThan('$(MSBuildVersion)', '17.5'))"
+           Text="NetEscapades.ProjectInfo requires MSBuild 17.5 or later (Visual Studio 2022 17.5 / .NET SDK 7.0.200). The current version is $(MSBuildVersion)." />
     <ItemGroup Condition="'@(ProjectInfoString)' != ''">
-      <_NetEscapadesProjectInfoEntry Include="S|$([System.Uri]::EscapeDataString(`%(ProjectInfoString.Identity)`))|$([System.Uri]::EscapeDataString(`%(ProjectInfoString.Value)`))" />
+      <_NetEscapadesProjectInfoEntry Include="S|$([MSBuild]::ConvertToBase64(`%(ProjectInfoString.Identity)`))|$([MSBuild]::ConvertToBase64(`%(ProjectInfoString.Value)`))" />
     </ItemGroup>
     <ItemGroup Condition="'@(ProjectInfoUtf8)' != ''">
-      <_NetEscapadesProjectInfoEntry Include="U|$([System.Uri]::EscapeDataString(`%(ProjectInfoUtf8.Identity)`))|$([System.Uri]::EscapeDataString(`%(ProjectInfoUtf8.Value)`))" />
+      <_NetEscapadesProjectInfoEntry Include="U|$([MSBuild]::ConvertToBase64(`%(ProjectInfoUtf8.Identity)`))|$([MSBuild]::ConvertToBase64(`%(ProjectInfoUtf8.Value)`))" />
     </ItemGroup>
     <PropertyGroup>
       <ProjectInfoItems>@(_NetEscapadesProjectInfoEntry, ',')</ProjectInfoItems>

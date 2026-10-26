@@ -66,8 +66,23 @@ public class DiagnosticTests
     public void UnevaluatedValue_ReportsNEPI005_AndKeepsOthers()
     {
         // What MSBuild leaves behind when a value contains a back-quote
-        const string unevaluated = "S|Bad|$([System.Uri]::EscapeDataString(`a`b`))";
+        const string unevaluated = "S|QmFk|$([MSBuild]::ConvertToBase64(`a`b`))";
         var config = new Dictionary<string, string> { [ItemsKey] = S("Good", "y") + "," + unevaluated };
+
+        var (ids, output) = Run(config);
+
+        ids.Should().Equal("NEPI005");
+        output.Should().Contain("""const string Good = "y";""").And.NotContain("Bad");
+    }
+
+    [Theory]
+    [InlineData("S|QmFk|eA")] // missing padding
+    [InlineData("S|QmFk|e%A=")] // invalid character
+    [InlineData("S|QmFk|eA=x")] // padding in the middle
+    [InlineData("S|Bad|eA==")] // invalid name
+    public void MalformedBase64_ReportsNEPI005_AndKeepsOthers(string malformed)
+    {
+        var config = new Dictionary<string, string> { [ItemsKey] = S("Good", "y") + "," + malformed };
 
         var (ids, output) = Run(config);
 
