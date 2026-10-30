@@ -10,6 +10,7 @@ public class ProjectInfoTests
     {
         ProjectInfo.Version.Should().Be("1.2.3");
         ProjectInfo.WithSpecialCharacters.Should().Be("a;b \"quoted\" it's | back\\slash é 😀");
+        ProjectInfo.EmptyValue.Should().Be(string.Empty);
     }
 
     [Fact]
@@ -17,5 +18,6 @@ public class ProjectInfoTests
     {
         ProjectInfo.VersionBytes.ToArray().Should().Equal(System.Text.Encoding.UTF8.GetBytes("4.5.6"));
         ProjectInfo.SpecialBytes.ToArray().Should().Equal(System.Text.Encoding.UTF8.GetBytes("é 😀"));
+        ProjectInfo.EmptyBytes.IsEmpty.Should().BeTrue();
     }
 }

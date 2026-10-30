@@ -138,11 +138,6 @@ public class ProjectInfoGenerator : IIncrementalGenerator
                 descriptor = DiagnosticDescriptors.DuplicateName;
                 state = Rejected;
             }
-            else if (entry.Value.Length == 0)
-            {
-                descriptor = DiagnosticDescriptors.MissingValue;
-                state = Registered;
-            }
             else if (entry.Kind == ProjectInfoKind.Utf8 && languageVersion < LanguageVersion.CSharp11)
             {
                 descriptor = DiagnosticDescriptors.Utf8RequiresCSharp11;

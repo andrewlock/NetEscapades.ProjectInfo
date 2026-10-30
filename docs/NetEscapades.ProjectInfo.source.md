@@ -39,7 +39,7 @@ internal static partial class ProjectInfo
 
 - `ProjectInfoString` generates a `public const string`.
 - `ProjectInfoUtf8` generates a `ReadOnlySpan<byte>` property using a `"..."u8` literal. This requires C# 11 or later (and a target that has `ReadOnlySpan<byte>`, e.g. the _System.Memory_ package on .NET Framework).
-- The item name (`Version`) is the member name, and the `Value` metadata is the value. Nothing is generated if you don't declare any items.
+- The item name (`Version`) is the member name, and the `Value` metadata is the value (an empty or missing `Value` generates `""`). Nothing is generated if you don't declare any items.
 
 The class is generated in your project's `<RootNamespace>` if one is set, otherwise in the global namespace. It is `internal` and `partial` by default; set `<ProjectInfoVisibility>public</ProjectInfoVisibility>` to make it `public`.
 
@@ -51,6 +51,6 @@ Invalid items are reported as errors and skipped; other items are still generate
 | --- | --- |
 | NEPI001 | The item name is not a valid C# identifier (or is `ProjectInfo`) |
 | NEPI002 | The item name is defined more than once (the first definition wins) |
-| NEPI003 | The item has no (or an empty) `Value` |
+| NEPI003 | No longer used: an empty `Value` generates an empty string |
 | NEPI004 | `ProjectInfoUtf8` is used with a language version lower than C# 11 |
 | NEPI005 | An item could not be read: values containing a back-quote (`) are not supported |

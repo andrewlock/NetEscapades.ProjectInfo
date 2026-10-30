@@ -45,12 +45,13 @@ public class DiagnosticTests
     }
 
     [Fact]
-    public void MissingValue_ReportsNEPI003()
+    public void EmptyValue_IsEmittedAsEmptyString()
     {
-        var (ids, output) = Run([S("Version", "")]);
+        var (ids, output) = Run([S("Version", ""), U("VersionBytes", "")]);
 
-        ids.Should().Equal("NEPI003");
-        output.Should().BeEmpty();
+        ids.Should().BeEmpty();
+        output.Should().Contain("""public const string Version = "";""")
+            .And.Contain("""VersionBytes => ""u8;""");
     }
 
     [Fact]
@@ -95,7 +96,7 @@ public class DiagnosticTests
     {
         var (ids, output) = Run([S("1Bad", "x"), S("Good", "y"), S("Good", "z"), S("Empty", "")]);
 
-        ids.Should().BeEquivalentTo("NEPI001", "NEPI002", "NEPI003");
-        output.Should().Contain("""const string Good = "y";""");
+        ids.Should().BeEquivalentTo("NEPI001", "NEPI002");
+        output.Should().Contain("""const string Good = "y";""").And.Contain("""const string Empty = "";""");
     }
 }

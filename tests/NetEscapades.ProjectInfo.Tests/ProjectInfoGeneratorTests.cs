@@ -164,6 +164,7 @@ public class ProjectInfoGeneratorTests
     }
 
     [Theory]
+    [InlineData("")]
     [InlineData("plain")]
     [InlineData("quote\" backslash\\ tab\t newline\n return\r nul\0 bell\a back\b ff\f vt\v")]
     [InlineData("100% sure %zz %2 %")]
@@ -177,6 +178,7 @@ public class ProjectInfoGeneratorTests
     }
 
     [Theory]
+    [InlineData("")]
     [InlineData("plain")]
     [InlineData("quote\" backslash\\ tab\t newline\n nul\0")]
     [MemberData(nameof(TrickyUtf8Strings))]

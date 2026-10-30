@@ -13,6 +13,8 @@
     <ProjectInfoString Include="WithSpecialCharacters" Value="a;b &quot;quoted&quot; it's | back\slash é 😀" />
     <ProjectInfoUtf8 Include="VersionBytes" Value="4.5.6" />
     <ProjectInfoUtf8 Include="SpecialBytes" Value="é 😀" />
+    <ProjectInfoString Include="EmptyValue" Value="" />
+    <ProjectInfoUtf8 Include="EmptyBytes" Value="" />
   </ItemGroup>
 
   <ItemGroup>

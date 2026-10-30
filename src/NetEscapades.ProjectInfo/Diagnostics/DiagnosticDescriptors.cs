@@ -22,13 +22,7 @@ internal static class DiagnosticDescriptors
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor MissingValue = new(
-        id: "NEPI003",
-        title: "Missing ProjectInfo value",
-        messageFormat: "The ProjectInfo item '{0}' does not have a Value",
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
+    // NEPI003 (missing value) is no longer used: empty values are emitted as ""
 
     public static readonly DiagnosticDescriptor UnsupportedValue = new(
         id: "NEPI005",
