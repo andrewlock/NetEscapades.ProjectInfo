@@ -1,6 +1,12 @@
 Changelog
 --- 
 
+## [v0.1.0-beta4](https://github.com/andrewlock/NetEscapades.ProjectInfo/compare/v0.1.0-beta3...v0.1.0-beta4)
+
+### Fixes
+
+* Allow empty `Value`s, which generate an empty string (`""` / `""u8`) instead of reporting NEPI003. NEPI003 is no longer used.
+
 ## [v0.1.0-beta3](https://github.com/andrewlock/NetEscapades.ProjectInfo/compare/v0.1.0-beta2...v0.1.0-beta3)
 
 ### Fixes
